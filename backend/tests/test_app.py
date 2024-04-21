@@ -2,12 +2,14 @@ from http import HTTPStatus
 
 from fastapi.testclient import TestClient
 
-from app.main import User, UserPublic, UserSchema
+from app.models.user import User
+from app.schemas.request_body import UserSchema
+from app.schemas.response_body import UserPublic
 
 
 def test_get_token(client: TestClient, user: User):
     response = client.post(
-        '/token',
+        '/auth/token',
         data={'username': user.email, 'password': user.clean_password},
     )
     token = response.json()
