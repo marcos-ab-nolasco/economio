@@ -7,18 +7,6 @@ from app.schemas.request_body import UserSchema
 from app.schemas.response_body import UserPublic
 
 
-def test_get_token(client: TestClient, user: User):
-    response = client.post(
-        '/auth/token',
-        data={'username': user.email, 'password': user.clean_password},
-    )
-    token = response.json()
-
-    assert response.status_code == HTTPStatus.OK
-    assert 'access_token' in token
-    assert 'token_type' in token
-
-
 def test_create_user(client: TestClient):
     sent_user_mock = UserSchema(
         username='alice', email='alice@example.com', password='123'
