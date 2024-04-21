@@ -5,11 +5,16 @@ from fastapi.testclient import TestClient
 from app.main import User, UserPublic, UserSchema
 
 
-def test_root_deve_retornar_ok_e_ola_mundo(client: TestClient):
-    response = client.get('/')
+def test_get_token(client: TestClient, user: User):
+    response = client.post(
+        '/token',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+    token = response.json()
 
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'message': 'Olá Mundo!'}
+    assert 'access_token' in token
+    assert 'token_type' in token
 
 
 def test_create_user(client: TestClient):
@@ -35,9 +40,10 @@ def test_read_users_with_users(client: TestClient, user: User):
     assert response.json() == {'users': [user_schema]}
 
 
-def test_update_user(client: TestClient, user: User):
+def test_update_user(client: TestClient, user: User, token: str):
     response = client.put(
-        '/users/1',
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'bob',
             'email': 'bob@example.com',
@@ -45,14 +51,20 @@ def test_update_user(client: TestClient, user: User):
         },
     )
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == UserPublic(**{
-        'username': 'bob',
-        'email': 'bob@example.com',
-        'id': 1,
-    }).model_dump()
+    assert (
+        response.json()
+        == UserPublic(**{
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'id': 1,
+        }).model_dump()
+    )
 
 
-def test_delete_user(client: TestClient, user: User):
-    response = client.delete('/users/1')
+def test_delete_user(client: TestClient, user: User, token: str):
+    response = client.delete(
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted'}
