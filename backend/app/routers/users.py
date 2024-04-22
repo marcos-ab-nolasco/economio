@@ -6,9 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_session
-from app.models.user import User
-from app.schemas.request_body import UserSchema
-from app.schemas.response_body import Message, UserList, UserPublic
+from app.models import User
+from app.schemas import Message, UserList, UserPublic, UserSchema
 from app.security import (
     get_current_user,
     get_password_hash,
