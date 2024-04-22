@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_session
 from app.models import Todo, User
-from app.schemas import TodoList, TodoPublic, TodoSchema, TodoUpdate
+from app.schemas import Message, TodoList, TodoPublic, TodoSchema, TodoUpdate
 from app.security import get_current_user
 
 router = APIRouter()
@@ -84,3 +84,20 @@ def patch_todo(
     session.refresh(db_todo)
 
     return db_todo
+
+
+@router.delete('/{todo_id}', response_model=Message)
+def delete_todo(todo_id: int, session: CurrentSession, user: CurrentUser):
+    todo = session.scalar(
+        select(Todo).where(Todo.user_id == user.id, Todo.id == todo_id)
+    )
+
+    if not todo:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='Task not found.'
+        )
+
+    session.delete(todo)
+    session.commit()
+
+    return {'message': 'Task has been deleted successfully.'}
