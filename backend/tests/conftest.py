@@ -3,12 +3,12 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app.database import get_session
 from app.main import api
 from app.models import Base, User
 from app.security import get_password_hash
+from app.settings import Settings
 
 
 class UserFactory(factory.Factory):
@@ -35,19 +35,14 @@ def client(session):
 
 @pytest.fixture()
 def session():
-    engine = create_engine(
-        'sqlite:///:memory:',
-        connect_args={'check_same_thread': False},
-        poolclass=StaticPool,
-    )  # cria um mecanismo SQLite db em memória usando SQLAlchemy.
-    Session = sessionmaker(
-        bind=engine
-    )  # fábrica de sessões para conexão com banco de dados
-    Base.metadata.create_all(engine)  # cria todas as tabelas
-    yield Session()  # persiste e propaga ums instancia de session
-    Base.metadata.drop_all(
-        engine
-    )  # no final do teste, apaga as tabelas em mémoria
+    engine = create_engine(Settings().DATABASE_URL)
+    Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(engine)
+    with Session() as session:
+        yield session
+        session.rollback()
+
+    Base.metadata.drop_all(engine)
 
 
 @pytest.fixture()
